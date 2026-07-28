@@ -29,7 +29,6 @@ GPR injects multi-scale pixel-level context (three parallel convolution branches
 - Ubuntu 20.04, with Python 3.10.13 and the following python dependencies.
 ```bash
 pip install -r requirements.txt
-pip install fvcore   # optional, only needed for count_flops_pr.py
 ```
 - Download the ISPRS Vaihingen / Potsdam 2D Semantic Labeling benchmarks (registration required via the ISPRS benchmark portal) and [DeepGlobe Land Cover Classification](https://competitions.codalab.org/competitions/18468) as needed.
 
@@ -49,7 +48,7 @@ data/
 │     ├─ JPEGImages/
 │     └─ SegmentationClass/
 ├─ Postdam/            (same layout, RGB tiles)
-├─ Postdam_IRRG/       (same layout, IRRG tiles — see prep_postdam_irrg.py; shares labels with Postdam/)
+├─ Postdam_IRRG/       (same layout, IRRG tiles; shares labels with Postdam/)
 └─ DeepGlobe/           (same layout, 6-class land cover)
 ```
 

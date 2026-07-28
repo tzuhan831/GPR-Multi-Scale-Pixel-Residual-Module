@@ -7,7 +7,3 @@ scikit-learn==1.7.2
 timm==0.5.4
 torch==2.1.0
 torchvision==0.16.0
-tqdm==4.65.0
-
-# optional, only needed for count_flops_pr.py
-# fvcore==0.1.5.post20221221
