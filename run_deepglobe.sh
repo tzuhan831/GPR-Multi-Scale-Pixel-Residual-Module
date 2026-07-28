@@ -24,7 +24,7 @@
 # ============================================================
 set -e
 START_TIME=$(date +%s)
-cd "$(dirname "$0")"
+cd /workspace/MCTformer
 
 # 2026-05-19：lr1 對照系列，避免覆蓋舊 baseline 結果（deepglobe_baseline 73.41 mIoU）
 # EXP=deepglobe_baseline
@@ -94,8 +94,10 @@ python evaluation.py \
                     --dataset deepglobe \
                     --no-background \
                     --img_dir ${DATA_PATH}/JPEGImages \
+                    --out-dir ${OUT}/pseudo-mask-layer${LAYER} \
                     --comment "${EXP}_layer${LAYER}"
                     # 2026-05-18 拿掉 --out-crf：DG 64200 tile + CRF 預估 13h，無 CRF ~1.5h
+                    # pseudo-mask-layer12 是未套 CRF 的原始 argmax 結果（無「-crf-」字樣以免誤導）
 
 # ============= 記錄 =============
 END_TIME=$(date +%s)

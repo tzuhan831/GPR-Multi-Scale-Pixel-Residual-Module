@@ -82,7 +82,9 @@ python evaluation.py \
                     --dataset deepglobe \
                     --no-background \
                     --img_dir ${DATA_PATH}/JPEGImages \
+                    --out-dir ${OUT}/pseudo-mask-layer${LAYER} \
                     --comment "${EXP}_layer${LAYER}"
+                    # pseudo-mask-layer12 是未套 CRF 的原始 argmax 結果（無「-crf-」字樣以免誤導）
 
 # ============= 記錄 =============
 END_TIME=$(date +%s)

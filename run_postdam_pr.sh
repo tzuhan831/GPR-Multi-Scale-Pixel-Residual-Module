@@ -75,6 +75,7 @@ python evaluation.py --list ${IMG_LIST}/train_id.txt \
                      --no-background \
                      --out-crf \
                      --img_dir ${DATA_PATH}/JPEGImages \
+                     --out-dir ${OUT}/pseudo-mask-crf-layer${LAYER} \
                      --comment "${EXP}_layer${LAYER}"
 
 # ============= 記錄 =============

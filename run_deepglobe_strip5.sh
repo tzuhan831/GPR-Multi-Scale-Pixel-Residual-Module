@@ -83,6 +83,7 @@ python evaluation.py \
                     --dataset deepglobe \
                     --no-background \
                     --img_dir ${DATA_PATH}/JPEGImages \
+                    --out-dir ${OUT}/pseudo-mask-layer${LAYER} \
                     --comment "${EXP}_layer${LAYER}"
 
 # ============= 記錄 =============

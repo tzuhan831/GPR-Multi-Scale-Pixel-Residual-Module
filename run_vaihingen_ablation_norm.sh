@@ -53,6 +53,7 @@ for NORM in $NORMS; do
                          --no-background \
                          --out-crf \
                          --img_dir ../data/Vaihingen/voc12/VOCdevkit/VOC2012/JPEGImages \
+                         --out-dir ${OUT}/pseudo-mask-crf-layer${LAYER} \
                          --comment "${EXP}_layer${LAYER}"
 
     END_TIME=$(date +%s)

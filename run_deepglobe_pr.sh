@@ -12,7 +12,7 @@
 # ============================================================
 set -e
 START_TIME=$(date +%s)
-cd "$(dirname "$0")"
+cd /workspace/MCTformer
 
 # 2026-05-19：改跑 lr×1（Postdam_11111111 顯示 lr×1 比 lr×10 高 0.95 mIoU，gate 動少反而結果好）
 # 完整 train data 64200 tile，不跑 19k subset 計畫
@@ -88,8 +88,10 @@ python evaluation.py \
                     --dataset deepglobe \
                     --no-background \
                     --img_dir ${DATA_PATH}/JPEGImages \
+                    --out-dir ${OUT}/pseudo-mask-layer${LAYER} \
                     --comment "${EXP}_layer${LAYER}"
                     # 2026-05-18 拿掉 --out-crf：DG 64200 tile + CRF 預估 13h，無 CRF ~1.5h
+                    # pseudo-mask-layer12 是未套 CRF 的原始 argmax 結果（無「-crf-」字樣以免誤導）
                     # 等 PR 跑出量級後再決定要不要補 CRF
 
 # ============= 記錄 =============
