@@ -4,9 +4,7 @@
 # baseline (MCTformer+，無 GPR) 訓練 → gen_attention_maps → eval
 #
 # 對應論文表4「MCTformer+ (baseline)」該列（mIoU 40.92）。
-# 要跑「+ GPR」預設設定，改用 run_vaihingen_ablation_norm.sh 的
-# instance-norm 那組（等同 --use-pixel-residual --pr-norm instance），
-# 或直接在 train 指令加上 --use-pixel-residual。
+# 要跑「+ GPR」預設設定，改用 run_vaihingen_pr.sh。
 # ============================================================
 set -e
 START_TIME=$(date +%s)

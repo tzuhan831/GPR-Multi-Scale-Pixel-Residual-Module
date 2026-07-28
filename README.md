@@ -193,7 +193,7 @@ Every ablation below follows the same three-step pipeline as above; the ready-ma
 | Script | Ablation | Thesis table |
 |---|---|---|
 | `run_{vaihingen,postdam,deepglobe}.sh` | Baseline (no GPR) | Tables 3–5 |
-| `run_deepglobe_pr.sh` | + GPR default (1,3,5), instance norm, lr×1 | Table 5 |
+| `run_{vaihingen,postdam,deepglobe}_pr.sh` | + GPR default (1,3,5), instance norm, lr×1 | Tables 3–5 |
 | `run_{vaihingen,postdam,deepglobe}_ablation_norm.sh` | Normalization: instance / batch / group / none | Table 1 |
 | `run_{vaihingen,postdam}_full.sh` | norm × lr-mult × Stacked/Multi-stage grid | Table 2, 13–14 |
 | `run_{vaihingen,postdam,deepglobe}_k13.sh` | `(1,3)` — drop the 5×5 branch | Tables 9–11 |
