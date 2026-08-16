@@ -1,50 +1,71 @@
-# References - MCTformer+
-The pytorch code for [Multi-class Token Transformer for Weakly Supervised Semantic Segmentation](https://arxiv.org/abs/2203.02891) (MCTformer, CVPR 2022) and its journal extension MCTformer+ (IEEE TPAMI 2024, vol. 46, no. 12, pp. 8380-8395).
+# GPR: Gated Pixel-level Residual for Remote Sensing WSSS
 
-[[MCTformer Paper]](https://arxiv.org/abs/2203.02891) [[Original repo]](https://github.com/xulianuwa/MCTformer)
-> If you need to train or reproduce vanilla MCTformer / MCTformer+, please rely on the original repo's docs and training scripts.
+This repository contains our **Gated Pixel-level Residual (GPR)** implementation built on top of MCTformer+ for weakly supervised semantic segmentation (WSSS) of remote sensing imagery.
+
+GPR injects multi-scale pixel-level context through three parallel convolution branches (**1×1 / 3×3 / 5×5**) via a learnable-gated additive residual immediately before the patch-embedding layer. This improves CAM localization for small and texture-similar objects, such as cars and low vegetation vs. trees, while introducing only **3,754 additional parameters (+0.017%)** over the MCTformer+ backbone.
+
+This repository provides utilities to:
+
+- Train MCTformer+ with the GPR module inserted before patch embedding.
+- Generate class activation maps (CAMs).
+- Evaluate CAM pseudo-label seeds against pixel-level ground truth.
+- Apply CRF refinement and export pseudo labels for training a downstream segmentation model.
+
+> **Note 🔎**  
+> To train or reproduce vanilla MCTformer+ without GPR, remove `--use-pixel-residual` and the other `--pr-*` flags from the commands below.
+
+---
+
+## MCTformer+ Backbone
+
+This implementation is built upon **Multi-class Token Transformer for Weakly Supervised Semantic Segmentation (MCTformer)** (CVPR 2022) and its journal extension **MCTformer+** (IEEE TPAMI 2024, vol. 46, no. 12, pp. 8380–8395).
+
+[[MCTformer Paper]](https://arxiv.org/abs/2203.02891)  
+[[Original Repository]](https://github.com/xulianuwa/MCTformer)
+
+> If you need to train or reproduce vanilla MCTformer / MCTformer+, please refer to the original repository's documentation and training scripts.
 
 <p align="center">
-  <img src="MCTformer-V2.png" width="720" title="Overview of MCTformer+" >
+  <img src="MCTformer-V2.png" width="680" alt="Overview of MCTformer+">
 </p>
-<p align = "center">
-Fig.1 - Overview of MCTformer+
+
+<p align="center">
+  <em>Fig. 1. Overview of MCTformer+</em>
 </p>
 
 ---
 
-# GPR: Gated Pixel-level Residual for Remote Sensing WSSS (on top of MCTformer+)
+## Prerequisites
 
-This repository contains our GPR implementation and utilities to:
-- train MCTformer+ with the GPR module inserted before patch embedding,
-- generate CAMs,
-- evaluate the CAM seed against pixel-level ground truth (with CRF refinement) and export CRF-refined pseudo labels for training a downstream segmentation model.
+- Ubuntu 20.04
+- Python 3.10.13
+- Install the required Python dependencies:
 
-> **Note🔎**
-> If you need to **train or reproduce vanilla MCTformer+** (without GPR), just drop `--use-pixel-residual` and the other `--pr-*` flags from the commands below.
-
-GPR injects multi-scale pixel-level context (three parallel convolution branches: 1×1 / 3×3 / 5×5) via a learnable-gated additive residual, immediately before the patch-embedding layer. Small / texture-similar objects (cars, low vegetation vs. trees) get better CAM localization, at the cost of only **3,754 extra parameters (+0.017%)** over the MCTformer+ backbone.
-
-## Prerequisite
-- Ubuntu 20.04, with Python 3.10.13 and the following python dependencies.
 ```bash
 pip install -r requirements.txt
 ```
-- Download the ISPRS Vaihingen / Potsdam 2D Semantic Labeling benchmarks (registration required via the ISPRS benchmark portal) and [DeepGlobe Land Cover Classification](https://competitions.codalab.org/competitions/18468) as needed.
+
+Download the required remote sensing datasets as needed:
+
+- **ISPRS Vaihingen 2D Semantic Labeling**
+- **ISPRS Potsdam 2D Semantic Labeling**
+- [DeepGlobe Land Cover Classification](https://competitions.codalab.org/competitions/18468)
+
+Registration is required for downloading the ISPRS benchmarks through the ISPRS benchmark portal.
 
 ---
 
-# GPR step
+## Dataset Structure
 
-## Complete folder format
-
-`data/` is a **sibling** of this repo, not a subfolder inside it (all scripts reference it as `../data/...`):
+The `data/` directory should be a **sibling** of this repository rather than a subdirectory inside it, because the provided scripts reference the datasets using `../data/...`.
 
 ```text
 parent/
-├─ GPR/                 ← this repo
+├─ GPR/                 ← this repository
 └─ data/
 ```
+
+The complete dataset structure should follow:
 
 ```text
 data/
@@ -55,86 +76,121 @@ data/
 │  └─ voc12/VOCdevkit/VOC2012/
 │     ├─ JPEGImages/
 │     └─ SegmentationClass/
-├─ Postdam/            (same layout, RGB tiles)
-├─ Postdam_IRRG/       (same layout, IRRG tiles; shares labels with Postdam/)
+│
+├─ Postdam/             (same layout, RGB tiles)
+├─ Postdam_IRRG/        (same layout, IRRG tiles; shares labels with Postdam/)
 └─ DeepGlobe/           (same layout, 6-class land cover)
 ```
 
-Pixel-level `SegmentationClass` masks are used only for evaluation, never for training — this is a WSSS pipeline trained purely on image-level labels (`cls_labels.npy`).
+Pixel-level `SegmentationClass` masks are used **only for evaluation and never for training**. The WSSS pipeline is trained purely using image-level labels stored in `cls_labels.npy`.
 
-#### Main Result
-mIoU of the CAM pseudo-label seed, MCTformer+ (baseline) vs. **+ GPR**:
+---
+
+## Main Results
+
+The following table reports the mIoU of the CAM pseudo-label seeds generated by **MCTformer+ (baseline)** and **MCTformer+ with GPR**.
 
 <table>
   <thead>
     <tr>
-      <th style="text-align:center;">Dataset</th>
-      <th style="text-align:center;">Baseline mIoU</th>
-      <th style="text-align:center;">+ GPR mIoU</th>
-      <th style="text-align:center;">Δ</th>
-      <th style="text-align:center;">Weights</th>
+      <th align="center">Dataset</th>
+      <th align="center">Baseline mIoU</th>
+      <th align="center">+ GPR mIoU</th>
+      <th align="center">Δ</th>
+      <th align="center">Weights</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td style="text-align:center;">ISPRS Vaihingen (IRRG)</td>
-      <td style="text-align:center;">40.92</td>
-      <td style="text-align:center;">49.04</td>
-      <td style="text-align:center;">+8.12</td>
-      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
+      <td align="center">ISPRS Vaihingen (IRRG)</td>
+      <td align="center">40.92</td>
+      <td align="center"><b>49.04</b></td>
+      <td align="center"><b>+8.12</b></td>
+      <td align="center">
+        <a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a>
+      </td>
     </tr>
     <tr>
-      <td style="text-align:center;">ISPRS Potsdam (RGB)</td>
-      <td style="text-align:center;">63.21</td>
-      <td style="text-align:center;">65.46</td>
-      <td style="text-align:center;">+2.25</td>
-      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
+      <td align="center">ISPRS Potsdam (RGB)</td>
+      <td align="center">63.21</td>
+      <td align="center"><b>65.46</b></td>
+      <td align="center"><b>+2.25</b></td>
+      <td align="center">
+        <a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a>
+      </td>
     </tr>
     <tr>
-      <td style="text-align:center;">ISPRS Potsdam (IRRG)</td>
-      <td style="text-align:center;">60.58</td>
-      <td style="text-align:center;">62.72</td>
-      <td style="text-align:center;">+2.14</td>
-      <td style="text-align:center;">—</td>
+      <td align="center">ISPRS Potsdam (IRRG)</td>
+      <td align="center">60.58</td>
+      <td align="center"><b>62.72</b></td>
+      <td align="center"><b>+2.14</b></td>
+      <td align="center">—</td>
     </tr>
     <tr>
-      <td style="text-align:center;">DeepGlobe (6-class)</td>
-      <td style="text-align:center;">76.41</td>
-      <td style="text-align:center;">77.36</td>
-      <td style="text-align:center;">+0.95</td>
-      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
+      <td align="center">DeepGlobe (6-class)</td>
+      <td align="center">76.41</td>
+      <td align="center"><b>77.36</b></td>
+      <td align="center"><b>+0.95</b></td>
+      <td align="center">
+        <a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a>
+      </td>
     </tr>
   </tbody>
 </table>
 
-> The Drive folder contains one subfolder per experiment (`{dataset}_baseline/`, `{dataset}_pr_ni_lr1/`), each holding `checkpoint.pth`. Potsdam IRRG checkpoints are not released. Drop a folder's `checkpoint.pth` under `saved_model/<name>/` and pass it to `--resume` to skip training and go straight to CAM generation.
+The Google Drive folder contains one subfolder for each experiment (`{dataset}_baseline/`, `{dataset}_pr_ni_lr1/`), with each folder containing a `checkpoint.pth`.
 
-See the thesis for per-class IoU, FP/FN rates, and confusion matrices.
+Potsdam IRRG checkpoints are not released.
 
-#### Qualitative Results
-##### ISPRS Vaihingen Dataset
+To skip training and directly generate CAMs, place the corresponding `checkpoint.pth` under:
+
+```text
+saved_model/<name>/
+```
+
+and specify the checkpoint using `--resume`.
+
+See the thesis for detailed per-class IoU, FP/FN rates, and confusion matrices.
+
+---
+
+## Qualitative Results
+
+### ISPRS Vaihingen Dataset
 
 <p align="center">
-  <img src="Pesudo-Seed-Result_Vaihingen.png" width="720" title="Vaihingen pseudo-seed result">
+  <img src="Pesudo-Seed-Result_Vaihingen.png" width="680" alt="Vaihingen pseudo-seed result">
 </p>
 
-##### ISPRS Potsdam Dataset
+### ISPRS Potsdam Dataset
 
 <p align="center">
-  <img src="Pesudo-Seed-Result_Potsdam.png" width="720" title="Potsdam pseudo-seed result">
+  <img src="Pesudo-Seed-Result_Potsdam.png" width="680" alt="Potsdam pseudo-seed result">
 </p>
 
-##### DeepGlobe Dataset
+### DeepGlobe Dataset
 
 <p align="center">
-  <img src="Pesudo-Seed-Result_DeepGlobe.png" width="720" title="DeepGlobe pseudo-seed result">
+  <img src="Pesudo-Seed-Result_DeepGlobe.png" width="680" alt="DeepGlobe pseudo-seed result">
 </p>
 
 ---
 
-### Train (GPR)
-Example: ISPRS Vaihingen, GPR default (1,3,5) kernels, instance norm.
-```text
+## GPR Pipeline
+
+The complete GPR pipeline consists of three main steps:
+
+1. **Train MCTformer+ with GPR**
+2. **Generate attention maps (CAMs)**
+3. **Evaluate CAMs and generate CRF-refined pseudo labels**
+
+---
+
+### Step 1 — Train GPR
+
+Example configuration for **ISPRS Vaihingen** using the default GPR configuration with `(1,3,5)` kernels and instance normalization:
+
+```bash
 python main.py \
 --data-set Vaihingen --img-list ../data/Vaihingen \
 --data-path ../data/Vaihingen/voc12/VOCdevkit/VOC2012 \
@@ -146,29 +202,36 @@ python main.py \
 ```
 
 <details>
-<summary>🔧 Arguments</summary>
+<summary><b>🔧 Arguments</b></summary>
 
-- --data-path  Dataset root (contains voc12/VOCdevkit/VOC2012/…)
-- --img-list   Directory holding the image ID lists (train_id.txt / val_id.txt)
-- --label-file-path  Image-level classification labels (cls_labels.npy)
-- --output_dir  Where logs/checkpoints are saved
-- --finetune    Init weights (ImageNet-pretrained DeiT-Small)
-- --use-pixel-residual  Enable GPR (single-layer PixelResidualStem)
-- --pr-kernels K  Largest branch kernel size (default 5 → branches (1,3,5); also 7/9 for the kernel-size ablation)
-- --pr-norm {instance,batch,group,none}  Normalization on the GPR correction term (default instance)
-- --pr-lr-mult  LR multiplier for the GPR param group (default 1.0)
-- --pr-13 / --pr-strip  Branch-shape ablation variants (mutually exclusive, --pr-13 takes priority) — see Ablation experiments below
-- --batch-size / --epochs / --input-size  Usual training knobs (defaults: epochs=45, input-size=448)
+<br>
+
+- `--data-path` — Dataset root containing `voc12/VOCdevkit/VOC2012/...`
+- `--img-list` — Directory containing the image ID lists (`train_id.txt` / `val_id.txt`)
+- `--label-file-path` — Image-level classification labels (`cls_labels.npy`)
+- `--output_dir` — Directory where logs and checkpoints are saved
+- `--finetune` — Initial weights (ImageNet-pretrained DeiT-Small)
+- `--use-pixel-residual` — Enable GPR (single-layer `PixelResidualStem`)
+- `--pr-kernels K` — Largest branch kernel size. Default `5` gives `(1,3,5)` branches; `7` and `9` are available for kernel-size ablation
+- `--pr-norm {instance,batch,group,none}` — Normalization applied to the GPR correction term (default: `instance`)
+- `--pr-lr-mult` — Learning-rate multiplier for the GPR parameter group (default: `1.0`)
+- `--pr-13 / --pr-strip` — Branch-shape ablation variants. These are mutually exclusive, with `--pr-13` taking priority
+- `--batch-size / --epochs / --input-size` — Standard training parameters (defaults: `epochs=45`, `input-size=448`)
+
 </details>
 
-#### Notes🔎
-- `--pr-kernels` (and `--pr-13` / `--pr-strip`) must be **identical** between the training run and the corresponding `--gen_attention_maps` run below, or `load_state_dict` will fail on shape mismatch.
-- After training, `--output_dir` contains `checkpoint.pth`; use it as `--resume` when generating CAMs.
+#### Notes 🔎
+
+- `--pr-kernels` and the corresponding `--pr-13` / `--pr-strip` settings must be **identical** between training and CAM generation. Otherwise, `load_state_dict` will fail because of a shape mismatch.
+- After training, `--output_dir` contains `checkpoint.pth`. Use this checkpoint with `--resume` during CAM generation.
 
 ---
 
-### Generate attention maps
-```text
+### Step 2 — Generate Attention Maps
+
+After training, load the generated checkpoint and generate multi-scale CAMs:
+
+```bash
 python main.py --data-set VaihingenMS \
 --img-list ../data/Vaihingen \
 --data-path ../data/Vaihingen/voc12/VOCdevkit/VOC2012 \
@@ -181,21 +244,30 @@ python main.py --data-set VaihingenMS \
 ```
 
 <details>
-<summary>🔧 Arguments</summary>
+<summary><b>🔧 Arguments</b></summary>
 
-- --data-set  Use the `*MS` variant (multi-scale + flip) for CAM generation
-- --resume    Load the trained checkpoint from the Train step
-- --cam-npy-dir  Where the generated CAMs (.npy) are written
-- --gen_attention_maps  Enable CAM generation mode (no training)
-- --layer-index  Transformer block used for CAM extraction (12 = last layer)
-- --use-pixel-residual / --pr-*  Must match the Train step exactly
+<br>
+
+- `--data-set` — Use the `*MS` variant for multi-scale + flip CAM generation
+- `--resume` — Load the trained checkpoint generated in Step 1
+- `--cam-npy-dir` — Directory where the generated CAM `.npy` files are saved
+- `--gen_attention_maps` — Enable CAM generation mode without training
+- `--layer-index` — Transformer block used for CAM extraction (`12` = final layer)
+- `--use-pixel-residual / --pr-*` — GPR settings must exactly match those used during training
+
 </details>
 
 ---
 
-### Verify the results / generate pseudo labels
-Unlike VOC (which needs a threshold sweep against a competing background class), our ISPRS/DeepGlobe setup has **no background class** — the 5/6 foreground classes tile the whole image, so the optimal threshold is always 0 (equivalent to plain argmax). We therefore evaluate directly at `--t 0` and write the CRF-refined pseudo mask in the same command:
-```text
+### Step 3 — Verify Results & Generate Pseudo Labels
+
+Unlike PASCAL VOC, which requires threshold sweeping against a competing background class, the ISPRS and DeepGlobe datasets used here have **no background class**.
+
+All pixels belong to one of the 5/6 foreground classes. Therefore, the optimal threshold is always `0`, which is equivalent to plain `argmax`.
+
+The CAMs can be evaluated and CRF-refined pseudo labels generated using:
+
+```bash
 python evaluation.py --list ../data/Vaihingen/train_id.txt \
 --gt_dir ../data/Vaihingen/voc12/VOCdevkit/VOC2012/SegmentationClass \
 --img_dir ../data/Vaihingen/voc12/VOCdevkit/VOC2012/JPEGImages \
@@ -207,38 +279,57 @@ python evaluation.py --list ../data/Vaihingen/train_id.txt \
 ```
 
 <details>
-<summary>🔧 Arguments</summary>
+<summary><b>🔧 Arguments</b></summary>
 
-- --predict_dir  Same path as --cam-npy-dir from the previous step
-- --gt_dir / --img_dir  Ground-truth masks / original images (img_dir only needed for CRF)
-- --t  Fixed foreground threshold (0 for our no-background remote sensing datasets; use `--curve True` instead to sweep thresholds, e.g. for VOC-style datasets with a background class)
-- --no-background  This dataset has no background class (all pixels belong to one of the foreground classes)
-- --out-crf --out-dir  Apply CRF refinement and write the resulting pseudo label masks
-- --dataset  Category-name / colormap set for the printed report (`vaihingen` / `postdam` / `deepglobe`)
+<br>
+
+- `--predict_dir` — Same directory specified by `--cam-npy-dir` in Step 2
+- `--gt_dir` — Ground-truth segmentation masks
+- `--img_dir` — Original images; required when applying CRF
+- `--t` — Fixed foreground threshold. Use `0` for the no-background remote sensing datasets
+- `--curve True` — Sweep thresholds for datasets with a background class, such as VOC-style datasets
+- `--no-background` — Indicates that every pixel belongs to one of the foreground classes
+- `--out-crf` — Apply CRF refinement
+- `--out-dir` — Directory where CRF-refined pseudo-label masks are saved
+- `--dataset` — Category-name / colormap configuration used in the printed report (`vaihingen` / `postdam` / `deepglobe`)
+
 </details>
 
-The resulting pseudo masks in `--out-dir` are what you'd feed into a fully-supervised segmentation model (we used DeepLab v2) for the second WSSS stage.
+The resulting pseudo masks stored in `--out-dir` can then be used to train a fully supervised segmentation model for the second WSSS stage. In our experiments, we used **DeepLab v2**.
 
 ---
 
-## Ablation experiments
-Every ablation below follows the same three-step pipeline as above; the ready-made scripts just wire up the right flags for you (run from inside `GPR/`, e.g. `bash run_vaihingen_ablation_norm.sh`):
+## Ablation Experiments
 
-| Script | Ablation | Thesis table |
+All ablation experiments follow the same three-step pipeline described above.
+
+Ready-made scripts are provided with the appropriate configurations. Run the scripts from inside the `GPR/` directory, for example:
+
+```bash
+bash run_vaihingen_ablation_norm.sh
+```
+
+| Script | Ablation | Thesis Table |
 |---|---|---|
 | `run_{vaihingen,postdam,deepglobe}.sh` | Baseline (no GPR) | Tables 3–5 |
-| `run_{vaihingen,postdam,deepglobe}_pr.sh` | + GPR default (1,3,5), instance norm, lr×1 | Tables 3–5 |
+| `run_{vaihingen,postdam,deepglobe}_pr.sh` | GPR default `(1,3,5)`, instance norm, lr×1 | Tables 3–5 |
 | `run_{vaihingen,postdam,deepglobe}_ablation_norm.sh` | Normalization: instance / batch / group / none | Table 1 |
-| `run_{vaihingen,postdam}_full.sh` | norm × lr-mult × Stacked/Multi-stage grid | Table 2, 13–14 |
-| `run_{vaihingen,postdam,deepglobe}_k13.sh` | `(1,3)` — drop the 5×5 branch | Tables 9–11 |
-| `run_{vaihingen,postdam,deepglobe}_strip5.sh` | Depthwise-separable 5×5 (SegNeXt-style; `--pr-strip`, "strip5" in the thesis text) | Table 12 |
+| `run_{vaihingen,postdam}_full.sh` | norm × lr-mult × Stacked/Multi-stage grid | Tables 2, 13–14 |
+| `run_{vaihingen,postdam,deepglobe}_k13.sh` | `(1,3)` — remove the 5×5 branch | Tables 9–11 |
+| `run_{vaihingen,postdam,deepglobe}_strip5.sh` | Depthwise-separable 5×5 (SegNeXt-style; `--pr-strip`, "strip5" in the thesis) | Table 12 |
 | `run_postdam_irrg_{baseline,pr}.sh` | Potsdam IRRG variant | Table 16 |
 
-Findings (see thesis §4.5 for full tables/discussion):
-- **Kernel combo** `(1,3,5)` beats `(1,3)`, `(1,3,7)`, `(1,3,9)` on all three datasets — the 5×5 branch is necessary, but going larger crosses the 16×16 patch boundary and hurts.
-- **Branch shape**: depthwise-separable `strip5` matches `(1,3,5)` on Vaihingen/DeepGlobe but collapses Potsdam Car IoU (55.6→5.2) — Potsdam needs *dense* cross-channel mixing at the 5px scale, not just a separable approximation of the receptive field.
-- **Layer count**: single-layer GPR beats both `Stacked ×2` and `Multi-stage` on all three datasets — more capacity is not better.
-- **Normalization**: `instance` is the only setting that's positive on all three datasets; `group` wins individually on Vaihingen/DeepGlobe but regresses -2.46 on Potsdam.
+### Findings
+
+See thesis §4.5 for the complete tables and discussion.
+
+- **Kernel combination:** `(1,3,5)` outperforms `(1,3)`, `(1,3,7)`, and `(1,3,9)` across all three datasets. The 5×5 branch is necessary, while larger kernels cross the 16×16 patch boundary and reduce performance.
+
+- **Branch shape:** The depthwise-separable `strip5` configuration performs similarly to `(1,3,5)` on Vaihingen and DeepGlobe, but substantially reduces Potsdam Car IoU (**55.6 → 5.2**). This suggests that Potsdam requires dense cross-channel mixing at the 5-pixel scale rather than only a separable approximation of the receptive field.
+
+- **Layer count:** Single-layer GPR outperforms both `Stacked ×2` and `Multi-stage` configurations across all three datasets, indicating that additional model capacity does not necessarily improve performance.
+
+- **Normalization:** `instance` is the only normalization setting that provides positive improvements across all three datasets. Although `group` performs best individually on Vaihingen and DeepGlobe, it decreases performance by **2.46 mIoU** on Potsdam.
 
 ---
 
@@ -246,15 +337,16 @@ Findings (see thesis §4.5 for full tables/discussion):
 
 If you use this code, please cite the underlying MCTformer+ paper:
 
-```
+```text
 L. Xu, M. Bennamoun, F. Boussaid, H. Laga, W. Ouyang, and D. Xu,
 "MCTformer+: Multi-class token transformer for weakly supervised semantic segmentation,"
-IEEE TPAMI, vol. 46, no. 12, pp. 8380-8395, 2024.
+IEEE TPAMI, vol. 46, no. 12, pp. 8380–8395, 2024.
 ```
 
 ---
 
 ## Contact
 
-If you have any questions, you can either create issues or contact us by email
-[cyculab618@gmail.com](mailto:cyculab618@gmail.com)
+If you have any questions, please create an issue or contact us by email:
+
+**cyculab618@gmail.com**
