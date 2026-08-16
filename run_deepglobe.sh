@@ -24,7 +24,7 @@
 # ============================================================
 set -e
 START_TIME=$(date +%s)
-cd /workspace/MCTformer
+cd "$(dirname "$0")"
 
 # 2026-05-19：lr1 對照系列，避免覆蓋舊 baseline 結果（deepglobe_baseline 73.41 mIoU）
 # EXP=deepglobe_baseline

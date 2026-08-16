@@ -12,7 +12,7 @@
 # ============================================================
 set -e
 START_TIME=$(date +%s)
-cd /workspace/MCTformer
+cd "$(dirname "$0")"
 
 # 2026-05-19：改跑 lr×1（Postdam_11111111 顯示 lr×1 比 lr×10 高 0.95 mIoU，gate 動少反而結果好）
 # 完整 train data 64200 tile，不跑 19k subset 計畫

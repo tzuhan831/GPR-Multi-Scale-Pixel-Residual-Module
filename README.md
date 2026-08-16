@@ -38,6 +38,14 @@ pip install -r requirements.txt
 
 ## Complete folder format
 
+`data/` is a **sibling** of this repo, not a subfolder inside it (all scripts reference it as `../data/...`):
+
+```text
+parent/
+├─ GPR/                 ← this repo
+└─ data/
+```
+
 ```text
 data/
 ├─ Vaihingen/
@@ -64,6 +72,7 @@ mIoU of the CAM pseudo-label seed, MCTformer+ (baseline) vs. **+ GPR**:
       <th style="text-align:center;">Baseline mIoU</th>
       <th style="text-align:center;">+ GPR mIoU</th>
       <th style="text-align:center;">Δ</th>
+      <th style="text-align:center;">Weights</th>
     </tr>
   </thead>
   <tbody>
@@ -72,29 +81,47 @@ mIoU of the CAM pseudo-label seed, MCTformer+ (baseline) vs. **+ GPR**:
       <td style="text-align:center;">40.92</td>
       <td style="text-align:center;">49.04</td>
       <td style="text-align:center;">+8.12</td>
+      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
     </tr>
     <tr>
       <td style="text-align:center;">ISPRS Potsdam (RGB)</td>
       <td style="text-align:center;">63.21</td>
       <td style="text-align:center;">65.46</td>
       <td style="text-align:center;">+2.25</td>
+      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
     </tr>
     <tr>
       <td style="text-align:center;">ISPRS Potsdam (IRRG)</td>
       <td style="text-align:center;">60.58</td>
       <td style="text-align:center;">62.72</td>
       <td style="text-align:center;">+2.14</td>
+      <td style="text-align:center;">—</td>
     </tr>
     <tr>
       <td style="text-align:center;">DeepGlobe (6-class)</td>
       <td style="text-align:center;">76.41</td>
       <td style="text-align:center;">77.36</td>
       <td style="text-align:center;">+0.95</td>
+      <td style="text-align:center;"><a href="https://drive.google.com/drive/folders/1nRCw_kT9Un-9jai9cTWw6U0Z-7Im0spF?usp=drive_link">Google Drive</a></td>
     </tr>
   </tbody>
 </table>
 
+> The Drive folder contains one subfolder per experiment (`{dataset}_baseline/`, `{dataset}_pr_ni_lr1/`), each holding `checkpoint.pth`. Potsdam IRRG checkpoints are not released. Drop a folder's `checkpoint.pth` under `saved_model/<name>/` and pass it to `--resume` to skip training and go straight to CAM generation.
+
 See the thesis for per-class IoU, FP/FN rates, and confusion matrices.
+
+#### Qualitative Results
+
+<p align="center">
+  <img src="Pesudo-Seed-Result_Vaihingen.png" width="720" title="Vaihingen pseudo-seed result">
+</p>
+<p align="center">
+  <img src="Pesudo-Seed-Result_Potsdam.png" width="720" title="Potsdam pseudo-seed result">
+</p>
+<p align="center">
+  <img src="Pesudo-Seed-Result_DeepGlobe.png" width="720" title="DeepGlobe pseudo-seed result">
+</p>
 
 ---
 
@@ -217,3 +244,10 @@ L. Xu, M. Bennamoun, F. Boussaid, H. Laga, W. Ouyang, and D. Xu,
 "MCTformer+: Multi-class token transformer for weakly supervised semantic segmentation,"
 IEEE TPAMI, vol. 46, no. 12, pp. 8380-8395, 2024.
 ```
+
+---
+
+## Contact
+
+If you have any questions, you can either create issues or contact us by email
+[cyculab618@gmail.com](mailto:cyculab618@gmail.com)
