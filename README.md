@@ -112,13 +112,20 @@ mIoU of the CAM pseudo-label seed, MCTformer+ (baseline) vs. **+ GPR**:
 See the thesis for per-class IoU, FP/FN rates, and confusion matrices.
 
 #### Qualitative Results
+##### ISPRS Vaihingen Dataset
 
 <p align="center">
   <img src="Pesudo-Seed-Result_Vaihingen.png" width="720" title="Vaihingen pseudo-seed result">
 </p>
+
+##### ISPRS Potsdam Dataset
+
 <p align="center">
   <img src="Pesudo-Seed-Result_Potsdam.png" width="720" title="Potsdam pseudo-seed result">
 </p>
+
+##### DeepGlobe Dataset
+
 <p align="center">
   <img src="Pesudo-Seed-Result_DeepGlobe.png" width="720" title="DeepGlobe pseudo-seed result">
 </p>
